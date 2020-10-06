@@ -3,7 +3,7 @@
 #include "cube.h"
 #include "field.h"
 #include "polygon.h"
-
+#include "polygonDeferred.h"
 
 using namespace DirectX;
 using namespace Microsoft::WRL;
@@ -55,12 +55,21 @@ private:
 	ComPtr<ID3D12PipelineState>			m_PipelineState;
 	ComPtr<ID3D12RootSignature>			m_RootSignature;
 
+	ComPtr<ID3D12Resource>				m_NormalResource;
+	ComPtr<ID3D12Resource>				m_DiffuseResource;
+	ComPtr<ID3D12DescriptorHeap>		m_RTVDesrciptorHeap;
+	ComPtr<ID3D12DescriptorHeap>		m_SRVDescriptorHeap;
+	D3D12_CPU_DESCRIPTOR_HANDLE			m_RTHandleGeometry[2];
+
+
+
 	D3D12_RECT							m_ScissorRect;
 	D3D12_VIEWPORT						m_Viewport;
 
 	std::unique_ptr<CField>			    m_Field;
 	std::unique_ptr<CCube>			    m_Cube;
 	std::unique_ptr<CPolygon>			m_Polygon;
+	std::unique_ptr<CPolygonDeferred>			m_PolygonDeferred;
 
 
 public:
@@ -72,6 +81,7 @@ public:
 	void Update();
 	void Draw();
 	void SetResourceBarrier(D3D12_RESOURCE_STATES BeforeState, D3D12_RESOURCE_STATES AfterState);
+	void SetResourceBarrierGeometry(D3D12_RESOURCE_STATES BeforeState, D3D12_RESOURCE_STATES AfterState);
 
 
 	static CRenderer* GetInstance() { return m_Instance; }

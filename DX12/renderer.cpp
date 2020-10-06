@@ -44,6 +44,9 @@ CRenderer::CRenderer()
 	m_Cube = std::make_unique<CCube>();
 	m_Cube->Initialize();
 
+	m_PolygonDeferred = std::make_unique<CPolygonDeferred>();
+	m_PolygonDeferred->Initialize();
+
 }
 
 
@@ -207,7 +210,125 @@ void CRenderer::Initialize()
 		m_Device->CreateDepthStencilView(m_DepthBuffer.Get(), &dsvDesc, m_DSHandle);
 	}
 
+	//ジオメトリバッファ生成
+	{
+		//リソース生成
+		{
+			D3D12_HEAP_PROPERTIES heapProperties{};
+			heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+			heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+			heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+			heapProperties.CreationNodeMask = 0;
+			heapProperties.VisibleNodeMask = 0;
 
+			D3D12_RESOURCE_DESC resourceDesc{};
+			resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+			resourceDesc.Width = m_WindowWidth;
+			resourceDesc.Height = m_WindowHeight;
+			resourceDesc.DepthOrArraySize = 1;
+			resourceDesc.MipLevels = 1;
+			resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+			resourceDesc.SampleDesc.Count = 1;
+			resourceDesc.SampleDesc.Quality = 0;
+			resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+			resourceDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+
+			D3D12_CLEAR_VALUE clearValue{};
+			clearValue.Color[0] = 0.0f;
+			clearValue.Color[1] = 0.0f;
+			clearValue.Color[2] = 0.0f;
+			clearValue.Color[3] = 1.0f;
+			clearValue.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+
+
+			hr = m_Device->CreateCommittedResource(&heapProperties,
+				D3D12_HEAP_FLAG_NONE,
+				&resourceDesc,
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+				&clearValue,
+				IID_PPV_ARGS(&m_NormalResource));
+			assert(SUCCEEDED(hr));
+
+			hr = m_Device->CreateCommittedResource(&heapProperties,
+				D3D12_HEAP_FLAG_NONE,
+				&resourceDesc,
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+				&clearValue,
+				IID_PPV_ARGS(&m_DiffuseResource));
+			assert(SUCCEEDED(hr));
+		}
+
+
+
+
+		{
+			//RTVデスクリプタヒープ
+			D3D12_DESCRIPTOR_HEAP_DESC desc;
+			desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+			desc.NumDescriptors = 2;
+			desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+			desc.NodeMask = 0;
+
+			m_Device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_RTVDesrciptorHeap));
+
+
+
+			//RTV
+			unsigned int size = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+			D3D12_CPU_DESCRIPTOR_HANDLE handle = m_RTVDesrciptorHeap->GetCPUDescriptorHandleForHeapStart();
+
+			D3D12_RENDER_TARGET_VIEW_DESC rtDesc = {};
+			rtDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+			rtDesc.ViewDimension = D3D12_RTV_DIMENSION::D3D12_RTV_DIMENSION_TEXTURE2D;
+			rtDesc.Texture2D.MipSlice = 0;
+			rtDesc.Texture2D.PlaneSlice = 0;
+
+			m_Device->CreateRenderTargetView(m_NormalResource.Get(), &rtDesc, handle);
+			m_RTHandleGeometry[0] = handle;
+
+			handle.ptr += (size);
+
+			m_Device->CreateRenderTargetView(m_DiffuseResource.Get(), &rtDesc, handle);
+			m_RTHandleGeometry[1] = handle;
+		}
+
+
+
+
+		{
+			//SRVデスクリプタヒープ
+			D3D12_DESCRIPTOR_HEAP_DESC desc;
+			desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+			desc.NumDescriptors = 2;
+			desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+			desc.NodeMask = 0;
+
+			m_Device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_SRVDescriptorHeap));
+
+
+
+
+			//SRV
+			unsigned int size = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			D3D12_CPU_DESCRIPTOR_HANDLE handle = m_SRVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+
+			D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+			srvDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+			srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+			srvDesc.Texture2D.MipLevels = 1;
+			srvDesc.Texture2D.MostDetailedMip = 0;
+			srvDesc.Texture2D.PlaneSlice = 0;
+			srvDesc.Texture2D.ResourceMinLODClamp = 0.0F;
+			srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+			m_Device->CreateShaderResourceView(m_NormalResource.Get(), &srvDesc, handle);
+			handle.ptr += (size);
+
+			m_Device->CreateShaderResourceView(m_DiffuseResource.Get(), &srvDesc, handle);
+
+		}
+
+	}
 
 	//コマンドリスト生成
 	{
@@ -423,13 +544,22 @@ void CRenderer::Draw()
 
 
 	FLOAT clearColor[4] = { 0.0f, 0.5f, 0.0f, 1.0f };
-
+	/*
 	//レンダーターゲット用リソースバリア
 	SetResourceBarrier(D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 	//デプスバッファ・レンダーターゲットのクリア
 	m_GraphicsCommandList->ClearDepthStencilView(m_DSHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 	m_GraphicsCommandList->ClearRenderTargetView(m_RTHandle[m_RTIndex], clearColor, 0, nullptr);
+	*/
+
+	// リソースの状態をプレゼント用からレンダーターゲット用に変更
+	SetResourceBarrierGeometry(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+	// 深度バッファとレンダーターゲットのクリア
+	m_GraphicsCommandList->ClearDepthStencilView(m_DSHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0, 0, 0, nullptr);
+	m_GraphicsCommandList->ClearRenderTargetView(m_RTHandleGeometry[0], clearColor, 0, nullptr);
+	m_GraphicsCommandList->ClearRenderTargetView(m_RTHandleGeometry[1], clearColor, 0, nullptr);
 
 	// ルートシグネチャとPSO設定
 	m_GraphicsCommandList->SetGraphicsRootSignature(m_RootSignature.Get());
@@ -440,7 +570,8 @@ void CRenderer::Draw()
 	m_GraphicsCommandList->RSSetScissorRects(1, &m_ScissorRect);
 
 	//レンダーターゲットの設定
-	m_GraphicsCommandList->OMSetRenderTargets(1, &m_RTHandle[m_RTIndex], TRUE, &m_DSHandle);
+	//m_GraphicsCommandList->OMSetRenderTargets(1, &m_RTHandle[m_RTIndex], TRUE, &m_DSHandle);
+	m_GraphicsCommandList->OMSetRenderTargets(2, m_RTHandleGeometry, TRUE, &m_DSHandle);
 
 
 
@@ -451,6 +582,20 @@ void CRenderer::Draw()
 	m_Field->Draw(m_GraphicsCommandList.Get());
 	m_Cube->Draw(m_GraphicsCommandList.Get());
 
+
+	SetResourceBarrierGeometry(D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+
+
+	SetResourceBarrier(D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+	m_GraphicsCommandList->OMSetRenderTargets(1, &m_RTHandle[m_RTIndex], TRUE, &m_DSHandle);
+
+	//デプスバッファ・レンダーターゲットのクリア
+	m_GraphicsCommandList->ClearDepthStencilView(m_DSHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	m_GraphicsCommandList->ClearRenderTargetView(m_RTHandle[m_RTIndex], clearColor, 0, nullptr);
+
+	m_PolygonDeferred->Draw(m_GraphicsCommandList.Get(), m_SRVDescriptorHeap.Get());
 
 	//プレゼント用リソースバリア
 	SetResourceBarrier(D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
@@ -508,15 +653,37 @@ void CRenderer::Draw()
 void CRenderer::SetResourceBarrier(D3D12_RESOURCE_STATES BeforeState, D3D12_RESOURCE_STATES AfterState)
 {
 	D3D12_RESOURCE_BARRIER resourceBarrier{};
-	
-	resourceBarrier.Type  = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+
+	resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	resourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	resourceBarrier.Transition.pResource   = m_RenderTarget[m_RTIndex].Get();
+	resourceBarrier.Transition.pResource = m_RenderTarget[m_RTIndex].Get();
 	resourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	resourceBarrier.Transition.StateBefore = BeforeState;
-	resourceBarrier.Transition.StateAfter  = AfterState;
+	resourceBarrier.Transition.StateAfter = AfterState;
 
 	m_GraphicsCommandList->ResourceBarrier(1, &resourceBarrier);
+
+}
+
+void CRenderer::SetResourceBarrierGeometry(D3D12_RESOURCE_STATES BeforeState, D3D12_RESOURCE_STATES AfterState)
+{
+	D3D12_RESOURCE_BARRIER resourceBarrier[2] = {};
+
+	resourceBarrier[0].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	resourceBarrier[0].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	resourceBarrier[0].Transition.pResource = m_NormalResource.Get();
+	resourceBarrier[0].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	resourceBarrier[0].Transition.StateBefore = BeforeState;
+	resourceBarrier[0].Transition.StateAfter = AfterState;
+
+	resourceBarrier[1].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	resourceBarrier[1].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	resourceBarrier[1].Transition.pResource = m_DiffuseResource.Get();
+	resourceBarrier[1].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	resourceBarrier[1].Transition.StateBefore = BeforeState;
+	resourceBarrier[1].Transition.StateAfter = AfterState;
+
+	m_GraphicsCommandList->ResourceBarrier(2, resourceBarrier);
 
 }
 

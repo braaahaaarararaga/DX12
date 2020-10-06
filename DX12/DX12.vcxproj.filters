@@ -30,6 +30,12 @@
     <ClCompile Include="field.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="cube.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="polygonDeferred.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="renderer.h">
@@ -45,6 +51,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="field.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="cube.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="polygonDeferred.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

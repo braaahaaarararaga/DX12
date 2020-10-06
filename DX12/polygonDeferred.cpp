@@ -1,8 +1,8 @@
-#include "main.h"
 #include "renderer.h"
-#include "polygon.h"
+#include "polygonDeferred.h"
 
-void CPolygon::Initialize()
+
+void CPolygonDeferred::Initialize()
 {
 	ComPtr<ID3D12Device> device = CRenderer::GetInstance()->GetDevice();
 
@@ -25,21 +25,21 @@ void CPolygon::Initialize()
 	resourceDesc.SampleDesc.Count = 1;
 	resourceDesc.SampleDesc.Quality = 0;
 
-	// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã®ä½œæˆ
+	// ’¸“_ƒoƒbƒtƒ@‚Ìì¬
 	resourceDesc.Width = sizeof(Vertex3D) * 4;
 	hr = device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE,
 		&resourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
 		IID_PPV_ARGS(&m_VertexBuffer));
 	assert(SUCCEEDED(hr));
 
-	// å®šæ•°ãƒãƒƒãƒ•ã‚¡ã®ä½œæˆ
-	resourceDesc.Width = 256; // å®šæ•°ãƒãƒƒãƒ•ã‚¡ã¯256byteã‚¢ãƒ©ã‚¤ãƒ³
+	// ’è”ƒoƒbƒtƒ@‚Ìì¬
+	resourceDesc.Width = 256; // ’è”ƒoƒbƒtƒ@‚Í256byteƒAƒ‰ƒCƒ“
 	hr = device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE,
 		&resourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
 		IID_PPV_ARGS(&m_ConstantBuffer));
 	assert(SUCCEEDED(hr));
 
-	// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ã®æ›¸ãè¾¼ã¿
+	// ’¸“_ƒf[ƒ^‚Ì‘‚«ž‚Ý
 	Vertex3D *buffer{};
 	hr = m_VertexBuffer->Map(0, nullptr, (void**)&buffer);
 	assert(SUCCEEDED(hr));
@@ -60,28 +60,26 @@ void CPolygon::Initialize()
 	m_VertexBuffer->Unmap(0, nullptr);
 
 
-	// ãƒ†ã‚¯ã‚¹ãƒãƒ£èª­ã¿è¾¼ã¿
-	m_Texture.Load("data/field004.tga");
 }
 
-void CPolygon::Uninitialize()
+void CPolygonDeferred::Uninitialize()
 {
 }
 
-void CPolygon::Update()
+void CPolygonDeferred::Update()
 {
 }
 
-void CPolygon::Draw(ID3D12GraphicsCommandList * CommandList)
+void CPolygonDeferred::Draw(ID3D12GraphicsCommandList * CommandList, ID3D12DescriptorHeap * Texture)
 {
 	HRESULT hr;
 
-	// ãƒžãƒˆãƒªã‚¯ã‚¹è¨­å®š
+	// ƒ}ƒgƒŠƒNƒXÝ’è
 	XMMATRIX view = XMMatrixIdentity();
 	XMMATRIX projection = XMMatrixOrthographicOffCenterLH(0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f);
 	XMMATRIX world = XMMatrixTranslation(100.0f, 100.0f, 0.0f);
 
-	// å®šæ•°ãƒãƒƒãƒ•ã‚¡è¨­å®š
+	// ’è”ƒoƒbƒtƒ@Ý’è
 	Constant *constant;
 	hr = m_ConstantBuffer->Map(0, nullptr, (void**)&constant);
 	assert(SUCCEEDED(hr));
@@ -96,22 +94,22 @@ void CPolygon::Draw(ID3D12GraphicsCommandList * CommandList)
 
 	CommandList->SetGraphicsRootConstantBufferView(0, m_ConstantBuffer->GetGPUVirtualAddress());
 
-	// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡è¨­å®š
+	// ’¸“_ƒoƒbƒtƒ@Ý’è
 	D3D12_VERTEX_BUFFER_VIEW vertexView{};
 	vertexView.BufferLocation = m_VertexBuffer->GetGPUVirtualAddress();
 	vertexView.StrideInBytes = sizeof(Vertex3D);
 	vertexView.SizeInBytes = sizeof(Vertex3D) * 4;
 	CommandList->IASetVertexBuffers(0, 1, &vertexView);
 
-	// ãƒ†ã‚¯ã‚¹ãƒãƒ£è¨­å®š
-	ID3D12DescriptorHeap* dh[] = { *m_Texture.GetSDescriptorHeap().GetAddressOf() };
+	// ƒeƒNƒXƒ`ƒƒÝ’è
+	ID3D12DescriptorHeap* dh[] = { Texture };
 	CommandList->SetDescriptorHeaps(_countof(dh), dh);
 	CommandList->SetGraphicsRootDescriptorTable(1,
-		m_Texture.GetSDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+		Texture->GetGPUDescriptorHandleForHeapStart());
 
-	// ãƒˆãƒãƒ­ã‚¸è¨­å®š
+	// ƒgƒ|ƒƒWÝ’è
 	CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-	// æç”»
+	// •`‰æ
 	CommandList->DrawInstanced(4, 1, 0, 0);
 }

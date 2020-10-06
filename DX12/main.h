@@ -22,3 +22,5 @@ using namespace DirectX;
 #define SCREEN_HEIGHT	(540)
 
 HWND GetWindow();
+
+// 360 322 2712  7nSSZM
