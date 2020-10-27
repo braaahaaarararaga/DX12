@@ -45,9 +45,9 @@ void CPolygonDeferred::Initialize()
 	assert(SUCCEEDED(hr));
 
 	buffer[0].Position = { 0.0f, 0.0f, 0.0f };
-	buffer[1].Position = { 100.0f, 0.0f, 0.0f };
-	buffer[2].Position = { 0.0f, 100.0f, 0.0f };
-	buffer[3].Position = { 100.0f, 100.0f, 0.0f };
+	buffer[1].Position = { 960.0f, 0.0f, 0.0f };
+	buffer[2].Position = { 0.0f, 540.0f, 0.0f };
+	buffer[3].Position = { 960.0f, 540.0f, 0.0f };
 	buffer[0].Normal = { 0.0f, 1.0f, 0.0f };
 	buffer[1].Normal = { 0.0f, 1.0f, 0.0f };
 	buffer[2].Normal = { 0.0f, 1.0f, 0.0f };
@@ -77,7 +77,7 @@ void CPolygonDeferred::Draw(ID3D12GraphicsCommandList * CommandList, ID3D12Descr
 	// マトリクス設定
 	XMMATRIX view = XMMatrixIdentity();
 	XMMATRIX projection = XMMatrixOrthographicOffCenterLH(0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f);
-	XMMATRIX world = XMMatrixTranslation(100.0f, 100.0f, 0.0f);
+	XMMATRIX world = XMMatrixTranslation(0.0f, 0.0f, 0.0f);
 
 	// 定数バッファ設定
 	Constant *constant;

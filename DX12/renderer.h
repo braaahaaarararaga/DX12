@@ -46,22 +46,29 @@ private:
 	ComPtr<IDXGISwapChain3>				m_SwapChain;
 	ComPtr<ID3D12GraphicsCommandList>	m_GraphicsCommandList;
 	ComPtr<ID3D12CommandAllocator>		m_CommandAllocator;
-	ComPtr<ID3D12Resource>				m_RenderTarget[2];
+	ComPtr<ID3D12Resource>				m_RenderTarget[4];
 	ComPtr<ID3D12DescriptorHeap>		m_DescriptorHeap;
-	D3D12_CPU_DESCRIPTOR_HANDLE			m_RTHandle[2];
+	D3D12_CPU_DESCRIPTOR_HANDLE			m_RTHandle[4];
 	ComPtr<ID3D12Resource>				m_DepthBuffer;
 	ComPtr<ID3D12DescriptorHeap>		m_DHDS;
 	D3D12_CPU_DESCRIPTOR_HANDLE			m_DSHandle;
-	ComPtr<ID3D12PipelineState>			m_PipelineState;
+	//ComPtr<ID3D12PipelineState>			m_PipelineState;
 	ComPtr<ID3D12RootSignature>			m_RootSignature;
 
 	ComPtr<ID3D12Resource>				m_NormalResource;
 	ComPtr<ID3D12Resource>				m_DiffuseResource;
+	ComPtr<ID3D12Resource>				m_PositionResource;
+	ComPtr<ID3D12Resource>				m_DepthResource;
+
+
+
 	ComPtr<ID3D12DescriptorHeap>		m_RTVDesrciptorHeap;
+	D3D12_CPU_DESCRIPTOR_HANDLE			m_RTHandleGeometry[4];
 	ComPtr<ID3D12DescriptorHeap>		m_SRVDescriptorHeap;
-	D3D12_CPU_DESCRIPTOR_HANDLE			m_RTHandleGeometry[2];
 
 
+	ComPtr<ID3D12PipelineState>			m_PipelineStateGeometry;
+	ComPtr<ID3D12PipelineState>			m_PipelineStateLight;
 
 	D3D12_RECT							m_ScissorRect;
 	D3D12_VIEWPORT						m_Viewport;

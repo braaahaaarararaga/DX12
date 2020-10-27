@@ -67,5 +67,17 @@
     <FxCompile Include="pixelShader.hlsl">
       <Filter>资源文件</Filter>
     </FxCompile>
+    <FxCompile Include="geometryVS.hlsl">
+      <Filter>资源文件</Filter>
+    </FxCompile>
+    <FxCompile Include="geometryPS.hlsl">
+      <Filter>资源文件</Filter>
+    </FxCompile>
+    <FxCompile Include="lightingVS.hlsl">
+      <Filter>资源文件</Filter>
+    </FxCompile>
+    <FxCompile Include="lightingPS.hlsl">
+      <Filter>资源文件</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

@@ -27,28 +27,28 @@ void CCube::Initialize()
 	resourceDesc.SampleDesc.Count = 1;
 	resourceDesc.SampleDesc.Quality = 0;
 
-	// í”µã¥Ð¥Ã¥Õ¥¡¤Î×÷³É
+	// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã®ä½œæˆ
 	resourceDesc.Width = sizeof(Vertex3D) * 24;
 	hr = device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE,
 		&resourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
 		IID_PPV_ARGS(&m_VertexBuffer));
 	assert(SUCCEEDED(hr));
 
-	// ¥¤¥ó¥Ç¥Ã¥¯¥¹¥Ð¥Ã¥Õ¥¡¤Î×÷³É
+	// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ã®ä½œæˆ
 	resourceDesc.Width = sizeof(unsigned short) * 36;
 	hr = device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE,
 		&resourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
 		IID_PPV_ARGS(&m_IndexBuffer));
 	assert(SUCCEEDED(hr));
 
-	// ¶¨Êý¥Ð¥Ã¥Õ¥¡¤Î×÷³É
-	resourceDesc.Width = 256; // ¶¨Êý¥Ð¥Ã¥Õ¥¡¤Ï256byte¥¢¥é¥¤¥ó
+	// å®šæ•°ãƒãƒƒãƒ•ã‚¡ã®ä½œæˆ
+	resourceDesc.Width = 256; // å®šæ•°ãƒãƒƒãƒ•ã‚¡ã¯256byteã‚¢ãƒ©ã‚¤ãƒ³
 	hr = device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE,
 		&resourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
 		IID_PPV_ARGS(&m_ConstantBuffer));
 	assert(SUCCEEDED(hr));
 
-	// í”µã¥Ç©`¥¿¤Î•ø¤­Þz¤ß
+	// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ã®æ›¸ãè¾¼ã¿
 	Vertex3D *vertex{};
 	hr = m_VertexBuffer->Map(0, nullptr, (void**)&vertex);
 	assert(SUCCEEDED(hr));
@@ -133,7 +133,7 @@ void CCube::Initialize()
 
 	m_VertexBuffer->Unmap(0, nullptr);
 
-	// ¥¤¥ó¥Ç¥Ã¥¯¥¹¥Ç©`¥¿¤Î•ø¤­Þz¤ß
+	// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿ã®æ›¸ãè¾¼ã¿
 	unsigned short *index;
 	hr = m_IndexBuffer->Map(0, nullptr, (void**)&index);
 	assert(SUCCEEDED(hr));
@@ -150,7 +150,7 @@ void CCube::Initialize()
 
 	m_IndexBuffer->Unmap(0, nullptr);
 
-	// ¥Æ¥¯¥¹¥Á¥ãÕi¤ßÞz¤ß
+	// ãƒ†ã‚¯ã‚¹ãƒãƒ£èª­ã¿è¾¼ã¿
 	m_Texture.Load("data/field004.tga");
 
 	m_Rotation = { 0.0f, 0.0f, 0.0f };
@@ -170,14 +170,14 @@ void CCube::Draw(ID3D12GraphicsCommandList * CommandList)
 {
 	HRESULT hr;
 
-	// ¥Þ¥È¥ê¥¯¥¹ÔO¶¨
+	// ãƒžãƒˆãƒªã‚¯ã‚¹è¨­å®š
 	XMMATRIX view = XMMatrixLookAtLH({ 0.0f, 0.0f, -5.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
 	XMMATRIX projection = XMMatrixPerspectiveFovLH(1.0f, (float)SCREEN_WIDTH / SCREEN_HEIGHT, 1.0f, 20.0f);
 	XMMATRIX world = XMMatrixIdentity();
 	world *= XMMatrixRotationRollPitchYaw(m_Rotation.x, m_Rotation.y, m_Rotation.z);
 	world *= XMMatrixTranslation(0.0f, 0.0f, 0.0f);
 
-	// ¶¨Êý¥Ð¥Ã¥Õ¥¡ÔO¶¨
+	// å®šæ•°ãƒãƒƒãƒ•ã‚¡è¨­å®š
 	Constant *constant;
 	hr = m_ConstantBuffer->Map(0, nullptr, (void**)&constant);
 	assert(SUCCEEDED(hr));
@@ -192,14 +192,14 @@ void CCube::Draw(ID3D12GraphicsCommandList * CommandList)
 
 	CommandList->SetGraphicsRootConstantBufferView(0, m_ConstantBuffer->GetGPUVirtualAddress());
 
-	// í”µã¥Ð¥Ã¥Õ¥¡ÔO¶¨
+	// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡è¨­å®š
 	D3D12_VERTEX_BUFFER_VIEW vertexView{};
 	vertexView.BufferLocation = m_VertexBuffer->GetGPUVirtualAddress();
 	vertexView.StrideInBytes = sizeof(Vertex3D);
 	vertexView.SizeInBytes = sizeof(Vertex3D) * 24;
 	CommandList->IASetVertexBuffers(0, 1, &vertexView);
 
-	// ¥¤¥ó¥Ç¥Ã¥¯¥¹¥Ð¥Ã¥Õ¥¡ÔO¶¨
+	// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡è¨­å®š
 	D3D12_INDEX_BUFFER_VIEW indexView{};
 	indexView.BufferLocation = m_IndexBuffer->GetGPUVirtualAddress();
 	indexView.SizeInBytes = sizeof(unsigned short) * 36;
@@ -207,15 +207,15 @@ void CCube::Draw(ID3D12GraphicsCommandList * CommandList)
 	CommandList->IASetIndexBuffer(&indexView);
 
 
-	// ¥Æ¥¯¥¹¥Á¥ãÔO¶¨
+	// ãƒ†ã‚¯ã‚¹ãƒãƒ£è¨­å®š
 	ID3D12DescriptorHeap* dh[] = { *m_Texture.GetSDescriptorHeap().GetAddressOf() };
 	CommandList->SetDescriptorHeaps(_countof(dh), dh);
 	CommandList->SetGraphicsRootDescriptorTable(1,
 		m_Texture.GetSDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
 
-	// ¥È¥Ý¥í¥¸ÔO¶¨
+	// ãƒˆãƒãƒ­ã‚¸è¨­å®š
 	CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	// Ãè»­
+	// æç”»
 	CommandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
 }

@@ -20,6 +20,6 @@ float4 main(PS_INPUT input) : SV_TARGET
     
     float4 color = texture0.Sample(sampler0, input.TexCoord);
     
-    color.rgb *= light;
+    //color.rgb *= light;
     return color;
 }
