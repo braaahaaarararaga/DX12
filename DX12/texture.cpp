@@ -17,10 +17,10 @@ void CTexture::Load(const char * FileName)
 
 	assert(file);
 
-	// ¥Ø¥Ã¥ÀÕi¤ßŞz¤ß
+	// ãƒ˜ãƒƒãƒ€èª­ã¿è¾¼ã¿
 	file.read((char*)header, sizeof(header));
 
-	// »­Ïñ¥µ¥¤¥ºÈ¡µÃ
+	// ç”»åƒã‚µã‚¤ã‚ºå–å¾—
 	width = header[13] * 256 + header[12];
 	height = header[15] * 256 + header[14];
 	depth = header[16];
@@ -37,9 +37,9 @@ void CTexture::Load(const char * FileName)
 
 	size = width * height * bpp;
 
-	// ¥á¥â¥ê´_±£
+	// ãƒ¡ãƒ¢ãƒªç¢ºä¿
 	image.resize(size);
-	// »­ÏñÕi¤ßŞz¤ß
+	// ç”»åƒèª­ã¿è¾¼ã¿
 	file.read(&image[0], size);
 
 
@@ -54,7 +54,7 @@ void CTexture::Load(const char * FileName)
 	ComPtr<ID3D12Device> device = CRenderer::GetInstance()->GetDevice();
 	HRESULT hr{};
 
-	// ¥ê¥½©`¥¹×÷³É
+	// ãƒªã‚½ãƒ¼ã‚¹ä½œæˆ
 	D3D12_HEAP_PROPERTIES heapProperties{};
 	heapProperties.CreationNodeMask = 0;
 	heapProperties.VisibleNodeMask = 0;
@@ -78,7 +78,7 @@ void CTexture::Load(const char * FileName)
 
 	assert(SUCCEEDED(hr));
 
-	//¡¡¥Ç¥¹¥¯¥ê¥×¥¿¥Ò©`¥××÷³É
+	//ã€€ãƒ‡ã‚¹ã‚¯ãƒªãƒ—ã‚¿ãƒ’ãƒ¼ãƒ—ä½œæˆ
 	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
 	descriptorHeapDesc.NumDescriptors = 1;
 	descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
@@ -87,7 +87,7 @@ void CTexture::Load(const char * FileName)
 	hr = device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&m_descriptorHeap));
 	assert(SUCCEEDED(hr));
 
-	// ¥·¥§©`¥À©`¥ê¥½©`¥¹×÷³É
+	// ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ãƒªã‚½ãƒ¼ã‚¹ä½œæˆ
 	D3D12_CPU_DESCRIPTOR_HANDLE handleSrv{};
 	D3D12_SHADER_RESOURCE_VIEW_DESC resourceViewDesc{};
 
@@ -102,7 +102,7 @@ void CTexture::Load(const char * FileName)
 	handleSrv = m_descriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	device->CreateShaderResourceView(*m_Resource.GetAddressOf(), &resourceViewDesc, handleSrv);
 
-	// »­Ïñ¥Ç©`¥¿•øŞz
+	// ç”»åƒãƒ‡ãƒ¼ã‚¿æ›¸è¾¼
 	D3D12_BOX box = { 0,0,0,(UINT)width, (UINT)height, 1 };
 	hr = m_Resource->WriteToSubresource(0, &box, &image[0], 4 * width, 4 * width*height);
 	assert(SUCCEEDED(hr));

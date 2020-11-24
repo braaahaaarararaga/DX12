@@ -2,6 +2,7 @@ Texture2D texture0 : register(t0);
 Texture2D texture1 : register(t1);
 Texture2D texture2 : register(t2);
 Texture2D texture3 : register(t3);
+Texture2D textureEnv : register(t4);
 SamplerState sampler0 : register(s0);
 
 struct PS_INPUT
@@ -36,6 +37,11 @@ float4 main(PS_INPUT input) : SV_TARGET
     spec = pow(spec, 20.0);
     color.rgb += spec;
     
+    // env
+    float2 envTexCoord;
+    envTexCoord.x = -ref.x * .3 + .5;
+    envTexCoord.y = -ref.y * .3 + .5;
+    color.rgb += textureEnv.Sample(sampler0, envTexCoord) * .5;
     
     float3 fogColor = float3(0.0, 0.0, 0.0);
     float fog = depth.x;
